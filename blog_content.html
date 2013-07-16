@@ -1,0 +1,129 @@
+<p>
+	享受脚本语言灵活、更新方便、免于编译的好处，但也不能忍受离开那些方便的IDE特性（跳转、自动完成）。
+</p>
+<p>
+	搜集整理了一些使用Sublime Text编辑cocos2dx-lua工程的资料，希望能给大家带来帮助。
+</p>
+<p>
+	<br />
+	
+</p>
+<p>
+	一、自动完成（auto-completion）
+</p>
+<p>
+	A.输入过的单词
+</p>
+<p>
+	本文件内输入过的单词，ST(sublime text)均会给出补全提示。这点甚至比大多数IDE都要强（一般只给出符号提示，对于字符串这类纯文本不提示）
+</p>
+<p>
+	<br />
+	
+</p>
+<p>
+	B.跨文件函数调用
+</p>
+<p>
+	跨文件的文本提示，ST需要插件支持。目前使用的一个插件<a href="https://github.com/eladyarkoni/MySignaturePlugin">MySignaturePlugin</a>，支持跨文件的函数补全，提示参数信息。这个插件只有一个python源文件，100多行代码。原本只支持js。我对它进行了一些lua支持的小修改<a href="https://github.com/wtyqm/cocos2dx-lua-tools/blob/master/mysign.py"> cocos2dx-lua-tools / mysign.py</a>
+</p>
+<p>
+	<br />
+	
+</p>
+<p>
+	C.cocos2dx api，自定义API
+</p>
+<p>
+	脚本中经常会调用一些导出的cocos2dx api，或者我们自定义的一些c++扩展API
+</p>
+<p>
+	<a href="https://github.com/06wj/cocos2d_lua_snippets">cocos2d_lua_snippets</a>，这个插件通过cocos2dx的tolua++ pkg文件，生成了一堆ST snippet（代码片段），达到了自动提示API的目的<br />
+	
+</p>
+<p>
+	<a href="https://github.com/wtyqm/cocos2dx-lua-tools/blob/master/build.py">生成脚本</a>&nbsp;我对它也进行了一些修改：a.导出pkg文件里的枚举定义 b.非static函数，自动补全时，不补全类名<br />
+	
+</p>
+<p>
+	<br />
+	
+</p>
+<p>
+</p>
+<p>
+	D.ST补全机制简介
+</p>
+<p>
+	以上的几种补全方法，充分利用了ST提供的补全扩展机制。ST补全时，会按以下次序考虑补全选项
+</p>
+<p>
+	a.snippet（代码片段）：指定关键字到一大段代码的映射，每个snippet要存储为一个单独的文件。cocos2d_lua_snippets采用的是这种方式
+</p>
+<p>
+	b.API-injected completions：python插件里可以注册回调函数，返回可能的补全选项，可以有逻辑，更灵活一些。MySignaturePlugin采用的是这种方式
+</p>
+<p>
+	c.completion file：我理解就是用一个文件存储大量简短的snippet。我写的cocos2dx枚举值补全采用的是这种方式
+</p>
+<p>
+	d.buffer：就是ST自带的本文件单词补全
+</p>
+<p>
+	<br />
+	
+</p>
+<p>
+	E.缺憾
+</p>
+<p>
+	以上的补全方法，都只是简单的文本级的匹配，无法像IDE对静态语言那样，进行语法分析后，根据当前上下文限制补全的内容。似乎动态语言的智能感知，本就比较困难，一个变量的类型，往往是运行时才可以知道，并且是可以变化的。
+</p>
+<p>
+	在一个讨论lua编辑器补全的帖子里，我看到一个Glider（一款商业lua IDE）员工的<a href="http://forums.coronalabs.com/topic/33883-anyone-using-sublime-text-2/page-2">回帖</a>。好像他们采用编辑器内置lua虚拟机的方式，可以实现更加强大的补全功能。<br />
+	
+</p>
+<p>
+</p>
+<p>
+	ST方面，更有潜力，更加强大的重量级插件有：
+</p>
+<p>
+	<a href="https://github.com/SublimeCodeIntel/SublimeCodeIntel">SublimeCodeIntel</a>&nbsp;、<a href="https://github.com/quarnster/completion">completion</a>&nbsp;
+</p>
+<p>
+	但是这两个插件目前都不支持lua，代码量也比较大，不太便于修改
+</p>
+<p>
+	同样是动态语言的js，这方面的支持就好得多，除了上面提到的SublimeCodeIntel，就连Visual Studio都提供了对js的智能感知。相比大量应用js的web开发，大量应用lua的游戏开发只能说是小弟弟了。若不是对精心设计的lua语言有好感，放不下它的coroutine机制，我想在cocos2dx里直接使用js绑定更加方便呢（几个zynga的老外全力搞js绑定，导致后起的js绑定在很多方面都已经领先lua绑定了）
+</p>
+<p>
+	<br />
+	
+</p>
+<p>
+	二、跳转
+</p>
+<p>
+	这里推荐Sublime Text 3的跳转功能。除了继承二代的文件内符号跳转，三代更是加入了文件间符号跳转
+</p>
+<p>
+	感觉ST的符号跳转，比IDE的功能还要好用，全程键盘操作，预览-返回，谁用谁知道
+</p>
+<p>
+	不过ST3的文件间跳转似乎还不支持预览-返回
+</p>
+<p>
+	<br />
+	
+</p>
+<p>
+	求助：
+</p>
+<p>
+	在github上看到好用的仓库，自己不确定会不会修改，一般会选择clone操作。但是这样万一以后修改了，不像fork那样，可以pull request，很难贡献代码。不管是否修改，直接fork的话，感觉又有些重度了。不知有没有其它的操作流程？
+</p>
+<p>
+	<br />
+	
+</p>

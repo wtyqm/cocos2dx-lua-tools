@@ -10,10 +10,12 @@ luaDir = "tolua++"
 snippetsDir = "snippets"
 templatePath = "template.sublime-snippet"
 completionTemplatePath = "template_completions.sublime-completions"
+completionItemTemplatePath = "template_completions_item.sublime-completions"
 
 
 template = codecs.open(templatePath, "r", "utf-8").read()
 templateCompletion = codecs.open(completionTemplatePath, "r", "utf-8").read()
+templateCompletionItem = codecs.open(completionItemTemplatePath, "r", "utf-8").read()
 data = {}
 dictStr = []
 
@@ -57,35 +59,72 @@ def outDict():
     ff.write(tpl)
     ff.close()
 
+def outputFunAPI(tree):
+    contentStr = ""
+    for klass in tree:
+        contentStr = contentStr + outputKclass(klass,tree[klass])
+        contentStr = contentStr + "\n"
+
+    tpl = templateCompletion
+    tpl = tpl.replace("%content",contentStr)
+    ff = codecs.open(os.path.join(snippetsDir, "api.sublime-completions"), "w", "utf-8")
+    ff.write(tpl)
+    ff.close()    
+
+
+
+def outputKclass(className, classData):
+    contentStr = ""
+    for sign in classData["func"]:
+        funcData = classData["func"][sign]
+        str = outPut(className, funcData["funcName"], funcData["args"], False)
+        contentStr = contentStr + '\t\t' + str  + ",\n"
+    if "static_func" in classData:
+        for sign in classData["static_func"]:
+            funcData = classData["static_func"][sign]
+            str = outPut(className, funcData["funcName"], funcData["args"], True)
+            contentStr = contentStr + '\t\t' + str  + ",\n"
+    return contentStr
+
 def outPut(klass, func, args, is_static):
     #print("write:", klass,func)
-    tpl = template
+    tpl = templateCompletionItem
     if is_static == False:
-        tpl = template.replace("%class:", "")    
+        tpl = tpl.replace("%class:", "")    
     tpl = tpl.replace("%class", klass)
     tpl = tpl.replace("%func", func)
     argList = args.split(",")
-    args = ""
+    argVal = ""
+    argHint = ""
     i = 1
-    if len(argList)==0 or argList[0]=="void":
-        args = ""
+    if args == "" or argList[0]=="void":
+        argVal = ""
     else:
         for arg in argList:
-            args += "${" + str(i) + ":" + arg + "}" + ","
+            argVal += "${" + str(i) + ":" + arg + "}" + ","
+            argHint += arg + ","
             i+=1
-        args = args[:-1]
-    tpl = tpl.replace("%args", args)
-    tempDir = os.path.join(snippetsDir, klass)
-    os.makedirs(tempDir, exist_ok=True)
-    ff = codecs.open(os.path.join(tempDir, klass+"_"+func)+".sublime-snippet", "w", "utf-8")
-    ff.write(tpl)
-    ff.close()
+        argVal = argVal[:-1]
+    tpl = tpl.replace("%args", argVal)
+    tpl = tpl.replace("%argHint", argHint)
+    return tpl
 
 def getSuperKlass(str):
     if str == "":
         return []
     else:
         return re.sub(r"\s*public\s*", "", str).split(",")
+
+def saveFuncSignature(table, funcStr, reg):
+    funcs = reg.findall(funcStr)
+    for func in funcs:
+        funcName = func[0]
+        args = re.sub(r",[\n\r\s]+", ",", func[1])
+        args = re.sub(r"\s+", "_", args)
+        signature = funcName + ":" + args
+        table[signature] = {}
+        table[signature]["funcName"] = funcName
+        table[signature]["args"] = args
 
 def getData(file):
     text = codecs.open(file, "r", "utf-8").read()
@@ -116,21 +155,11 @@ def getData(file):
         klassData["super"] = getSuperKlass(superKlass)
 
         staticFuncData = klassData["static_func"] = {}
-        funcs = funcSP.findall(funcStr)
-        for func in funcs:
-            funcName = func[0]
-            args = re.sub(r",[\n\r\s]+", ",", func[1])
-            args = re.sub(r"\s+", "_", args)
-            staticFuncData[funcName] = args
+        saveFuncSignature(staticFuncData,funcStr,funcSP)
         funcStr = funcSP.sub("",funcStr)
 
         funcData = klassData["func"] = {}
-        funcs = funcP.findall(funcStr)
-        for func in funcs:
-            funcName = func[0]
-            args = re.sub(r",[\n\r\s]+", ",", func[1])
-            args = re.sub(r"\s+", "_", args)
-            funcData[funcName] = args
+        saveFuncSignature(funcData,funcStr,funcP)
         data[klassName] = klassData
 
 for file in os.listdir(luaDir):
@@ -172,15 +201,7 @@ for klass in data:
             extends(data[klass], superName)
 
 
-for klass in tree:
-    #print(klass+":")
-    for func in tree[klass]["func"]:
-        outPut(klass, func, tree[klass]["func"][func], False)
-    if "static_func" in tree[klass]:
-        for func in tree[klass]["static_func"]:
-            outPut(klass, func, tree[klass]["static_func"][func], True)
-
-
+outputFunAPI(tree)
 outDict()
 
 

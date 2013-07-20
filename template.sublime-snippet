@@ -1,0 +1,9 @@
+<snippet>
+    <content><![CDATA[
+%class:%func(%args)
+]]></content>
+    <tabTrigger>%class_%func</tabTrigger>
+    <scope>source.lua</scope>
+    <description></description>
+</snippet>
+

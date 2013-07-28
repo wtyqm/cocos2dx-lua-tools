@@ -54,6 +54,8 @@ def outDict():
     contentStr = ""
     for str in dictStr:
         contentStr = contentStr + '\t\t"' + str + '"' + ",\n"
+    if len(contentStr) > 2:
+        contentStr = contentStr[:-2]
     tpl = tpl.replace("%content",contentStr)
     ff = codecs.open(os.path.join(snippetsDir, "enum.sublime-completions"), "w", "utf-8")
     ff.write(tpl)
@@ -64,7 +66,8 @@ def outputFunAPI(tree):
     for klass in tree:
         contentStr = contentStr + outputKclass(klass,tree[klass])
         contentStr = contentStr + "\n"
-
+    if len(contentStr) > 3:
+        contentStr = contentStr[:-3]
     tpl = templateCompletion
     tpl = tpl.replace("%content",contentStr)
     ff = codecs.open(os.path.join(snippetsDir, "api.sublime-completions"), "w", "utf-8")
